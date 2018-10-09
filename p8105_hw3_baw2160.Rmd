@@ -44,13 +44,32 @@ brfss_data = brfss_smart2010 %>%
 
 * In 2002, which states were observed at 7 locations?
 ```{r}
-county_distinct = distinct(brfss_data, Location_County, .keep_all = TRUE) %>% 
-  count(Location_State) %>% 
+states_with_7_obs = distinct(brfss_data, Location_County, .keep_all = TRUE) %>% 
+  count(Year) %>% 
   filter(n == 7)
 ```
 
-**Answer:** `r county_distinct$Location_State`
+**Answer:** `r states_with_7_obs$Location_State`
 
 * Make a “spaghetti plot” that shows the number of observations in each state from 2002 to 2010.
+```{r}
+counts_per_state = distinct(brfss_data, Location_County, .keep_all = TRUE) %>% 
+  count(Location_State, Year) 
+ggplot(counts_per_state, aes(x = Year, y = n, group = Location_State)) +
+  geom_line(aes(color = Location_State), alpha = .5)
+```
+
 * Make a table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State.
+```{r}
+brfss_data %>%
+  group_by(Location_State) %>%
+  summarize(mean_excellent = mean(tmax, na.rm = TRUE),
+            sd_excellent = sd(tmax))
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(mean_tmax = mean(tmax)) %>% 
+  spread(key = month, value = mean_tmax) %>% 
+  knitr::kable(digits = 1)
+```
+
 * For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
