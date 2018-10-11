@@ -94,17 +94,50 @@ gather(state_avgs, key = health_score, value = averages, avg_excellent:avg_poor)
 ```
 
 ##Problem 2:
-The goal is to do some exploration of this dataset. To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and giving illustrative examples of observations. 
+
+###Description of the instacart dataset:
+
+```{r}
+class(instacart)
+
+purchases_per_dept = instacart %>% 
+  count(department) %>% 
+  arrange(n)
+
+grouped_orders = instacart %>% 
+  group_by(order_id) 
+avg_days_btw_orders = mean(grouped_orders$days_since_prior_order)
+median_days_btw_orders = median(grouped_orders$days_since_prior_order)
+sd_days_btw_orders = sd(grouped_orders$days_since_prior_order)
+
+dow = grouped_orders %>% 
+  summarize()
+```
 
 * Size of the data: `r dim(instacart)[1]` observations, with `r dim(instacart)[2]` variables.
-* Structure of the data: `r class(instacart)`. Each row of the table appears to correspond to a single purchase.
-* Key variables:
-  *
+* Structure of the data: a dataframe that is organized as a table. Seems pretty tidy, as each variable isn't a category of an overall variable. Each row of the table appears to correspond to a single purchase.Purchases bought together are classified with a unique order ID and each order is attributed to a user with a unqiue user ID. 
+* Key variables include:
+  * order_id: unique number to identify the order
+  * reordered: boolean that indicates whether the user has purchased this item before
+  * user_id: unique number to identify the user making the purchase
+  * order_dow: day of the week that the order is placed
+  * order_hour_of_day: hour of the day that the order is placed
+  * aisle: name of the aisle that the item is catalogued under
+  * department: name of the department that houses the aisle that the item is catalogued under  
+* Illustrative examples of observations:
+  * There are 21 possible departments to order from
+  * The "bulk" department has been ordered from the least
+  * The "produce" department is the msot popular department to order from
+  * On average, there are `r avg_days_btw_orders` days between orders from the same user
+    * There is a pretty wide spread on this though - the standard deviation is roughly 10 and a half days
+  * The most frequent day of the week that things are ordered is:
+  * Produce is most frequently bought on this day of the week
+  
 
 Then, do or answer the following (commenting on the results of each):
 
-How many aisles are there, and which aisles are the most items ordered from?
-Make a plot that shows the number of items ordered in each aisle. Order aisles sensibly, and organize your plot so others can read it.
-Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
-Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+* How many aisles are there, and which aisles are the most items ordered from?
+* Make a plot that shows the number of items ordered in each aisle. Order aisles sensibly, and organize your plot so others can read it.
+* Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+* Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
 
