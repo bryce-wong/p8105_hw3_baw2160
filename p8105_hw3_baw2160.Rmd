@@ -83,13 +83,11 @@ state_avgs = brfss_data %>%
     avg_verygood = mean(very_good, na.rm = TRUE),
     avg_fair = mean(fair, na.rm = TRUE),
     avg_poor = mean(poor, na.rm = TRUE)
-  ) 
-```
-  gather(key = observation, value = temp, avg_excellent:avg_poor) %>%
-  ggplot(aes(x = Year, fill = Location_State)) + 
-  geom_density(alpha = .5) + 
-  facet_grid(Location_State) +
+  )  
+gather(state_avgs, key = health_score, value = averages, avg_excellent:avg_poor) %>%
+  ggplot(aes(x = Year, fill = Location_State)) +
+  geom_density(alpha = .5) +
+  facet_grid(~health_score) + 
   viridis::scale_fill_viridis(discrete = TRUE)
 ```
-  facet_grid(~response) +
 
