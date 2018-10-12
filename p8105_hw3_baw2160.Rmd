@@ -109,10 +109,8 @@ grouped_orders = instacart %>%
 avg_days_btw_orders = mean(grouped_orders$days_since_prior_order)
 median_days_btw_orders = median(grouped_orders$days_since_prior_order)
 sd_days_btw_orders = sd(grouped_orders$days_since_prior_order)
-
-dow = grouped_orders %>% 
-  summarize()
 ```
+most_frequent_day = tail(names(sort(table(grouped_orders$order_dow))), 1)
 
 * Size of the data: `r dim(instacart)[1]` observations, with `r dim(instacart)[2]` variables.
 * Structure of the data: a dataframe that is organized as a table. Seems pretty tidy, as each variable isn't a category of an overall variable. Each row of the table appears to correspond to a single purchase.Purchases bought together are classified with a unique order ID and each order is attributed to a user with a unqiue user ID. 
@@ -123,21 +121,60 @@ dow = grouped_orders %>%
   * order_dow: day of the week that the order is placed
   * order_hour_of_day: hour of the day that the order is placed
   * aisle: name of the aisle that the item is catalogued under
-  * department: name of the department that houses the aisle that the item is catalogued under  
+  * department: name of the department that houses the aisle that the item is catalogued under
+  
 * Illustrative examples of observations:
   * There are 21 possible departments to order from
   * The "bulk" department has been ordered from the least
   * The "produce" department is the msot popular department to order from
   * On average, there are `r avg_days_btw_orders` days between orders from the same user
     * There is a pretty wide spread on this though - the standard deviation is roughly 10 and a half days
-  * The most frequent day of the week that things are ordered is:
+    
+    DO BELOW?
+  * The most frequent day of the week that things are ordered is: 0 (which I'm guessing is Sunday)
   * Produce is most frequently bought on this day of the week
+  ----------------------------------------
   
 
 Then, do or answer the following (commenting on the results of each):
+```{r}
+purchases_per_aisle = instacart %>% 
+  count(aisle) %>% 
+  arrange(desc(n))
+```
 
 * How many aisles are there, and which aisles are the most items ordered from?
+  * **Answer:** There are 134 aisles
+  * **Answer:** The aisle the most items are ordered from are "fresh vegetables" and "fresh fruits"
 * Make a plot that shows the number of items ordered in each aisle. Order aisles sensibly, and organize your plot so others can read it.
-* Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
-* Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+```{r}
+aisle_plot = instacart %>% 
+  mutate(
+    aisle = as.factor(aisle)
+  )
 
+ggplot(instacart, aes(x = aisle)) +
+  geom_bar()
+```
+
+* Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+```{r}
+popular_items_by_aisle = instacart %>% 
+  group_by(aisle) %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  count(product_name) %>%
+  filter(min_rank(desc(n)) == 1) %>% 
+  knitr::kable(digits = 1)
+```
+`r popular_items_by_aisle`
+
+* Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+```{r}
+mean_hours_dow_apples_icecream = instacart %>% 
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  group_by(order_dow) %>% 
+  summarize(mean_hour = mean(order_hour_of_day)) %>% 
+  spread(key = order_dow, value = mean_hour) %>% 
+  knitr::kable(digits = 1)
+```
+`r mean_hours_dow_apples_icecream`
