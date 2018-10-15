@@ -22,7 +22,7 @@ library(p8105.datasets)
 ### Read and clean data:
 * Formatted the data to use appropriate variable names.
 * Focused on the “Overall Health” topic.
-* Include only responses from "Excellent" to "Poor"
+* Included only responses from "Excellent" to "Poor"
 * Organized responses as a factor taking levels from “Excellent” to “Poor”
 
 ```{r}
@@ -45,9 +45,9 @@ states_with_7_obs = brfss_data %>%
   filter(n == 7)
 ```
 
-**Answer:** `r states_with_7_obs$Location_State`
+**Answer:** `r states_with_7_obs$Location_State` - only 3 out of 51 possible locations had observations in 7 distinct counties. This could make the data for these states more complete, but more difficult to compare with other states (which may not be as representative).
 
-* "Spaghetti plot” that shows the number of observations in each state from 2002 to 2010.
+* "Spaghetti plot” that shows the number of observations in each state from 2002 to 2010:
 ```{r}
 counts_per_state = distinct(brfss_data, Location_County, .keep_all = TRUE) %>% 
   count(Location_State, Year) 
@@ -59,40 +59,50 @@ ggplot(counts_per_state, aes(x = Year, y = n, group = Location_State)) +
     y = "Observations"
   )
 ```
-#FLAG: is this spaghetti plot readable?
 
-* Table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State.
+It looks like there were few observations for most states early on - they really pick up towards the latter end of the timeframe. There appears to be a state that is a huge outlier, with more observations than the others.
+
+* Table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State:
 ```{r}
-NY_data = brfss_data %>% 
+NY_brfss_data = brfss_data %>% 
   group_by(Location_State, Year) %>% 
   spread(key = Response, value = Proportion) %>% 
   filter(Location_State == "NY", Year %in% c("2002", "2006", "2010")) %>% 
-  summarize(mean_excellent = mean(Excellent, na.rm = TRUE),
-            sd_excellent = sd(Excellent, na.rm = TRUE)) %>% 
+  summarize(Mean_Excellent = mean(Excellent, na.rm = TRUE),
+            SD_Excellent = sd(Excellent, na.rm = TRUE)) %>% 
   knitr::kable(digits = 1)
-NY_data
+NY_brfss_data
 ```
 
-* For each year and state, computed the average proportion in each response category (taking the average across locations in a state). Made a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+The mean and standard deviation of the proportion of "Excellent" responses across New York seem pretty stable from year to year. A little under a fourth (~25%) of respondents seem to find their health "Excellent" in New York, with a standard deviation of roughly 4%.
+
+* For each year and state, computed the average proportion in each response category (taking the average across locations in a state). Made a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time:
 ```{r}
-state_avgs = brfss_data %>%
+state_response_avgs = brfss_data %>%
   spread(key = Response, value = Proportion) %>% 
   group_by(Year, Location_State) %>% 
   janitor::clean_names() %>% 
   summarize(
-    avg_excellent = mean(excellent, na.rm = TRUE), 
-    avg_good = mean(good, na.rm = TRUE), 
-    avg_very_good = mean(very_good, na.rm = TRUE),
-    avg_fair = mean(fair, na.rm = TRUE),
-    avg_poor = mean(poor, na.rm = TRUE)
-  )  
+    Avg_Excellent = mean(excellent, na.rm = TRUE), 
+    Avg_Good = mean(good, na.rm = TRUE), 
+    Avg_Very_Good = mean(very_good, na.rm = TRUE),
+    Avg_Fair = mean(fair, na.rm = TRUE),
+    Avg_Poor = mean(poor, na.rm = TRUE)
+  ) %>% 
+  gather(key = health_score, value = averages, Avg_Excellent:Avg_Poor)
 
-state_avgs = gather(state_avgs, key = health_score, value = averages, avg_excellent:avg_poor) %>%
-  ggplot( aes(x = Year, y = averages)) + 
-  geom_density_ridges(scale = .85) +
-  facet_grid(~health_score)
+ggplot(state_response_avgs, aes(x = Year, y = averages)) + 
+  geom_hex() +
+  facet_grid(~health_score) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 5)) +
+  labs(
+    title = "Distributions of state averages across the years",
+    x = "Year",
+    y = "Average proportion per state"
+  )
 ```
-#FLAG: how best to show this distribution??
+
+The dsitribution of state averages in each response category seem pretty stable across the years. The distribution seems the widest in the "Very Good" category, and the smallest in the "Poor" category. The highest proportion of respondents are generally in the "Very Good" category, with fewer falling in the "Fair" and "Poor" categories.
 
 ##Problem 2:
 
@@ -133,8 +143,8 @@ popular_order_days = instacart %>%
     * The "bulk" department has been ordered from the least
     * The "produce" department is the msot popular department to order from
     * On average, there are `r avg_days_btw_orders` days between orders from the same user
-    * There is a pretty wide spread on this though - the standard deviation is roughly 10 and a half days
-  * The most frequent day of the week that things are ordered is: 0 (which I'm guessing is Sunday)
+        * There is a pretty wide spread on this though - the standard deviation is roughly 10 and a half days
+    * The most frequent day of the week that things are ordered is: 0 (which I'm guessing is Sunday)
 
 ##Answering some questions:
 ```{r}
@@ -146,15 +156,15 @@ purchases_per_aisle = instacart %>%
 * How many aisles are there, and which aisles are the most items ordered from?
     * **Answer:** There are 134 aisles - this is significantly more than the number of departments there are, so likely each department has (on average) 6 or so aisles.
     * **Answer:** The aisle the most items are ordered from are "fresh vegetables" and "fresh fruits" - interesting, because these are online orders. Apparently a lot of customers are using most of their online grocery purchases to buy fresh produce. This doesn't necessarily mean that they prefer using the internet to buy this type of product. It could mean that they just need to buy this type of product more frequently when making online grocery purchases (which makes sense, since organic material is bound to spoil faster).
-* Make a plot that shows the number of items ordered in each aisle. Order aisles sensibly, and organize your plot so others can read it.
+* Made a plot that shows the number of items ordered in each aisle:
 ```{r}
-aisle_plot = instacart %>% 
+aisle_purchases_plot = instacart %>% 
   mutate(
     aisle = as.factor(aisle)
   ) %>% 
   count(aisle)
 
-aisle_plot %>%
+aisle_purchases_plot %>%
   mutate(aisle = fct_reorder(aisle, n)) %>%
   ggplot( aes(x = aisle, y = n)) +
     geom_bar(stat = "identity") +
@@ -165,10 +175,10 @@ aisle_plot %>%
     y = "Number of purchases"
   )
 ```
-This plot reveals an exponential curve, telling us that people are potentially buying the majority of their online groceries from only a few aisles.
-#FLAG: is this plot readable
 
-* Made a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+This plot reveals an exponential curve, telling us that people are potentially buying the majority of their online groceries from only a few aisles.
+
+* Made a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”:
 ```{r}
 popular_items_by_aisle = instacart %>% 
   group_by(aisle) %>% 
@@ -179,7 +189,9 @@ popular_items_by_aisle = instacart %>%
 ```
 `r popular_items_by_aisle`
 
-* Made a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; formatted this table for human readers (i.e. produced a 2 x 7 table).
+The most popular item in "dog food care" isn't as objectively popular as other items - but compared to other "dog food care" items, it is. Of the most popular products in these 3 categories, "Organic Baby Spinach" has the highest absolute number.
+
+* Made a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; formatted this table for human readers (i.e. produced a 2 x 7 table):
 ```{r}
 mean_hours_dow_apples_icecream = instacart %>% 
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
@@ -189,6 +201,8 @@ mean_hours_dow_apples_icecream = instacart %>%
   knitr::kable(digits = 1)
 ```
 `r mean_hours_dow_apples_icecream`
+
+The hour that coffee ice cream and pink lady apples are respectively bought during seem pretty stable across the days of the week. Customers seem to buy cofee ice cream later in the day during the middle of the week. They seem to buy pink lady apples later in the day during the beginning and middle of the week.
 
 ##Problem Three:
 
@@ -206,12 +220,12 @@ number_of_stations = ny_noaa %>%
     * date: The day, month, and year that the observation was recorded
     * prcp, snow, snwd: These are weather measurements taken during the observation. They represent the amount of preciptation, snowfall, and snowdepth at that location on that day.
     * tmax, tmin: These are temperature measurements taken during the observation. They represent the maximum temperature and minimum temperature during that day at that location.
-* There does seem to be a lot of missing data - specifically in the tmax and tmin variables. This may be problematic if we want to get an idea of temperature trends or groupings.
+* There does seem to be a lot of missing data - specifically in the tmax and tmin variables. This may be problematic if we want to get an idea of temperature trends or other patterns.
 
 ###Data cleaning:
 
-* Creating separate variables for year, month, and day. 
-* Changing observations for precipitation to match the units for snowfall and temperature. 
+* Created separate variables for year, month, and day. 
+* Changed observations for precipitation to match the units for snowfall and temperature. 
 
 ```{r}
 cleaned_nynoaa = ny_noaa %>% 
@@ -226,11 +240,11 @@ snow_nynoaa = cleaned_nynoaa %>%
   count(snow) %>% 
   arrange(min_rank(desc(n)))
 ```
-It seems like the most commonly observed values for snowfall are 0 and "NA". This could be because the obeservations were not often made in an hour that sees a lot of snow, or observations were not made during a time when snowfall is common. The amount of "NA" observations reveals that there are a lot of missing values for snowfall in the data.
+It seems like the most commonly observed values for snowfall are 0 and "NA". This could be because the obeservations were not often made in an area that sees a lot of snow, or observations were not made during a time when snowfall is common. The amount of "NA" observations reveals that there are a lot of missing values for snowfall in the data.
 
-###Making some plots: (commenting on the results of each):
+###Making some plots:
 
-Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?
+* Made a two-panel plot showing the average max temperature in January and in July in each station across years: 
 ```{r}
 tmax_jan_july = cleaned_nynoaa %>% 
   filter(month %in% c("01", "07")) %>% 
@@ -252,27 +266,37 @@ ggplot(tmax_jan_july, aes(x = id, y = mean_tmax, color = month)) +
     y = "Average Max Temp (Degrees Celcius)"
   )
 ```
-#FLAG: readable?
-It looks like the average max temperature for stations in January hover around 0 degrees Celcius. It looks as if average max temperature for stations in July are more centered around the upper 20s. The spread for max temperature also appears to be larger in January than in July. 
 
-Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); 
+It looks like the average max temperature for stations in January hover around 0 degrees Celcius. It looks as if average max temperature for stations in July are more centered around the upper 20s. The spread for max temperature also appears to be larger in January than in July. There appear to be a few outliers in the month of January. The right-heavy nature of the scatterplot tells us that a lot of observations are missing for nearly half the dataset.
+
+* Made a two-panel plot showing tmax vs tmin for the full dataset: 
 ```{r}
-tmax_and_tmin = gather(ny_noaa, key = temp_type, value = temp_value, tmax:tmin) 
+tmax_and_tmin = cleaned_nynoaa %>% 
+  gather(key = temp_type, value = temp_value, tmax:tmin) 
 
-ggplot(tmax_and_tmin, aes(x = temp_type, y = temp_value)) + 
-  geom_boxplot()
-
-ggplot(tmax_and_tmin, aes(x = temp_type, y = temp_value)) + 
-  geom_violin(aes(fill = temp_type), color = "blue", alpha = .5) + 
-  theme(legend.position = "bottom") 
+ggplot(tmax_and_tmin, aes(x = temp_value, fill = temp_type)) + 
+  geom_histogram() +
+  facet_grid(~temp_type) +
+  labs(
+    title = "Maximum and minimum temperatures",
+    x = "Temperature (in degrees Celcius)",
+    y = "Observations"
+  )
 ```
-#FLAG: idk; violin or hex
 
-and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+It appears as if the majority of tmin observations were around the 0 degrees Celcius mark, while most of the tmax observations were shifted a little bit higher. It also appears as if the distributions for each are bell-shaped, with more of a tail in the lower (left) end.
+
+* Made a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 ```{r}
 snow_dist = cleaned_nynoaa %>% 
   filter(snow > 0 & snow < 100) 
 ggplot(snow_dist, aes(x = year, y = snow)) + 
-  geom_hex()
+  geom_hex() +
+  labs(
+    title = "Distribution of snowfall between 0 and 100",
+    x = "Year",
+    y = "Snowfall in mm"
+  )
 ```
-#FLAG: readable? 
+
+There appears to be a lot of whitespace, which might mean that these are all the areas where there is missing data. The distribution gets darker the more snowfall there is, indicating that there are less observations with this much snowfall. The colors seem pretty consistent across the x-axis, indicating that there isn't as much variation year to year in how many observations there are per an amount of snow.
